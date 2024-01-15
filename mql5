@@ -1,0 +1,155 @@
+
+//+------------------------------------------------------------------+
+//|                                 OneKey 28 Year Shift             |
+//|                    Developer: Forex Robot Easy Team              |
+//|                     Website: forexroboteasy.com                  |
+//+------------------------------------------------------------------+
+
+// Function to shift the data to the left for 28 years
+void ShiftDataLeftFor28Years(double &data[], int data_size)
+{
+    for (int i = 0; i < data_size; i++)
+    {
+        if (i < data_size - 252 * 28)
+        {
+            data[i] = data[i + 252 * 28];
+        }
+        else
+        {
+            data[i] = 0; // Fill the remaining data with 0
+        }
+    }
+}
+
+// Method to detect cheats within an EA by analyzing the shifted data
+bool DetectCheats(double &data[], int data_size)
+{
+    double max_value = -DBL_MAX;
+    double min_value = DBL_MAX;
+    
+    for (int i = 0; i < data_size; i++)
+    {
+        if (data[i] > max_value)
+        {
+            max_value = data[i];
+        }
+        
+        if (data[i] < min_value)
+        {
+            min_value = data[i];
+        }
+    }
+    
+    double range = max_value - min_value;
+    double threshold = range * 0.1; // Set the cheat detection threshold to 10% of the data range
+    
+    for (int i = 0; i < data_size; i++)
+    {
+        if (data[i] > max_value - threshold || data[i] < min_value + threshold)
+        {
+            return true; // Cheats detected
+        }
+    }
+    
+    return false; // No cheats detected
+}
+
+// Function to calculate the performance of an EA based on the shifted data
+double CalculatePerformance(double &data[], int data_size)
+{
+    double total_return = 0;
+    
+    for (int i = 0; i < data_size - 1; i++)
+    {
+        double daily_return = (data[i + 1] - data[i]) / data[i];
+        total_return += daily_return;
+    }
+    
+    double average_return = total_return / (data_size - 1);
+    double performance = average_return * 252 * 100; // Convert average return to annualized percentage
+    
+    return performance;
+}
+
+// Algorithm to evaluate the effectiveness of an EA by comparing its performance before and after the shift
+string EvaluateEAEffectiveness(double &data_before_shift[], int before_shift_size, double &data_after_shift[], int after_shift_size)
+{
+    double performance_before_shift = CalculatePerformance(data_before_shift, before_shift_size);
+    double performance_after_shift = CalculatePerformance(data_after_shift, after_shift_size);
+    
+    string evaluation_result;
+    
+    if (performance_after_shift > performance_before_shift)
+    {
+        evaluation_result = 'The EA is more effective after the shift.';
+    }
+    else if (performance_after_shift < performance_before_shift)
+    {
+        evaluation_result = 'The EA is less effective after the shift.';
+    }
+    else
+    {
+        evaluation_result = 'The EA's effectiveness remains the same after the shift.';
+    }
+    
+    return evaluation_result;
+}
+
+// Feature to present the evaluation results to traders
+void PresentEvaluationResults(string evaluation_result)
+{
+    Print('Evaluation Result: ', evaluation_result);
+}
+
+// Error handling mechanism to prevent crashes during data shifting and analysis
+void HandleErrors()
+{
+    if (GetLastError() != 0)
+    {
+        Print('An error occurred during data shifting and analysis!');
+    }
+}
+
+// Entry point of the program
+void OnStart()
+{
+    int data_size = 252 * 28; // Assuming daily data for 28 years
+    
+    double data_before_shift[data_size];
+    double data_after_shift[data_size];
+    
+    // Fill the data arrays with sample historical trading data
+    for (int i = 0; i < data_size; i++)
+    {
+        data_before_shift[i] = i * 100; // Sample data for demonstration purposes
+        data_after_shift[i] = (i + 1) * 100;
+    }
+    
+    // Shift the data to the left for 28 years
+    ShiftDataLeftFor28Years(data_before_shift, data_size);
+    
+    // Detect cheats within an EA by analyzing the shifted data
+    bool cheats_detected = DetectCheats(data_before_shift, data_size);
+    
+    if (cheats_detected)
+    {
+        Print('Cheats detected in the EA!');
+    }
+    else
+    {
+        Print('No cheats detected in the EA.');
+    }
+    
+    // Calculate the performance of an EA based on the shifted data
+    double performance = CalculatePerformance(data_after_shift, data_size);
+    Print('EA Performance: ', performance, '%');
+    
+    // Evaluate the effectiveness of an EA by comparing its performance before and after the shift
+    string evaluation_result = EvaluateEAEffectiveness(data_before_shift, data_size, data_after_shift, data_size);
+    
+    // Present the evaluation results to traders
+    PresentEvaluationResults(evaluation_result);
+    
+    // Handle any errors that may occur during data shifting and analysis
+    HandleErrors();
+}
